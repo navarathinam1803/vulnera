@@ -25,3 +25,17 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+# Build outputs
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Generated security reports
+security-reports/

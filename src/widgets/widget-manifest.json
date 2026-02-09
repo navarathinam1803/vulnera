@@ -267,7 +267,11 @@
                     }
                 }
             ],
-            "tags": ["security", "dependencies", "ship"]
+            "tags": [
+                "security",
+                "dependencies",
+                "ship"
+            ]
         },
         {
             "uri": "/highest-risk",
@@ -278,13 +282,22 @@
                     "name": "Top risk",
                     "description": "Show highest risk dependency",
                     "data": {
-                        "highest": {"name": "lodash", "severity": "high", "title": "Prototype Pollution", "fixAvailable": "4.17.21"},
+                        "highest": {
+                            "name": "lodash",
+                            "severity": "high",
+                            "title": "Prototype Pollution",
+                            "fixAvailable": "4.17.21"
+                        },
                         "summary": "Highest risk: lodash (high). Prototype Pollution. Fix available: 4.17.21.",
                         "allBySeverity": []
                     }
                 }
             ],
-            "tags": ["security", "dependencies", "prioritization"]
+            "tags": [
+                "security",
+                "dependencies",
+                "prioritization"
+            ]
         },
         {
             "uri": "/vulnerability-summary",
@@ -296,12 +309,22 @@
                     "description": "Summarize vulnerabilities",
                     "data": {
                         "summary": "Your project has 5 vulnerability findings.",
-                        "bySeverity": {"critical": [], "high": [], "moderate": [], "low": [], "info": []},
+                        "bySeverity": {
+                            "critical": [],
+                            "high": [],
+                            "moderate": [],
+                            "low": [],
+                            "info": []
+                        },
                         "total": 5
                     }
                 }
             ],
-            "tags": ["security", "dependencies", "summary"]
+            "tags": [
+                "security",
+                "dependencies",
+                "summary"
+            ]
         },
         {
             "uri": "/upgrade-suggestions",
@@ -312,12 +335,24 @@
                     "name": "Upgrades",
                     "description": "Suggest upgrades",
                     "data": {
-                        "suggestions": [{"package": "lodash", "current": "<4.17.21", "target": "4.17.21", "severity": "high", "action": "npm install lodash@4.17.21"}],
+                        "suggestions": [
+                            {
+                                "package": "lodash",
+                                "current": "<4.17.21",
+                                "target": "4.17.21",
+                                "severity": "high",
+                                "action": "npm install lodash@4.17.21"
+                            }
+                        ],
                         "summary": "Apply these 1 upgrade(s) in order of priority (critical/high first):"
                     }
                 }
             ],
-            "tags": ["security", "dependencies", "upgrades"]
+            "tags": [
+                "security",
+                "dependencies",
+                "upgrades"
+            ]
         },
         {
             "uri": "/compare-scans",
@@ -331,21 +366,61 @@
                         "repoId": "owner/repo",
                         "baseline": {
                             "scannedAt": "2025-01-01T12:00:00Z",
-                            "counts": {"critical": 1, "high": 2, "moderate": 0, "low": 0, "info": 0},
+                            "counts": {
+                                "critical": 1,
+                                "high": 2,
+                                "moderate": 0,
+                                "low": 0,
+                                "info": 0
+                            },
                             "totalVulnerabilities": 3
                         },
                         "current": {
                             "scannedAt": "2025-02-01T12:00:00Z",
-                            "counts": {"critical": 0, "high": 0, "moderate": 1, "low": 0, "info": 0},
+                            "counts": {
+                                "critical": 0,
+                                "high": 0,
+                                "moderate": 1,
+                                "low": 0,
+                                "info": 0
+                            },
                             "totalVulnerabilities": 1
                         },
-                        "fixed": [{"name": "lodash", "severity": "high", "title": "Prototype Pollution"}],
+                        "fixed": [
+                            {
+                                "name": "lodash",
+                                "severity": "high",
+                                "title": "Prototype Pollution"
+                            }
+                        ],
                         "introduced": [],
                         "summary": "Compared **owner/repo**: **2** fixed. Total change: -2 vulnerability(ies)."
                     }
                 }
             ],
-            "tags": ["security", "dependencies", "compare", "trend"]
+            "tags": [
+                "security",
+                "dependencies",
+                "compare",
+                "trend"
+            ]
+        },
+        {
+            "uri": "/security-report",
+            "name": "Security Report",
+            "description": "Displays the status and path of the generated security PDF report",
+            "examples": [
+                {
+                    "name": "Report Generated",
+                    "description": "Show success message for generated report",
+                    "data": "/path/to/security-report.pdf"
+                }
+            ],
+            "tags": [
+                "security",
+                "report",
+                "pdf"
+            ]
         }
     ],
     "generatedAt": "2025-12-03T00:00:00.000Z"
