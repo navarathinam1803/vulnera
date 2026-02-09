@@ -1,0 +1,8 @@
+{
+  "/vulnerability-summary/page": "app/vulnerability-summary/page.js",
+  "/highest-risk/page": "app/highest-risk/page.js",
+  "/ship-readiness/page": "app/ship-readiness/page.js",
+  "/compare-scans/page": "app/compare-scans/page.js",
+  "/security-report/page": "app/security-report/page.js",
+  "/upgrade-suggestions/page": "app/upgrade-suggestions/page.js"
+}

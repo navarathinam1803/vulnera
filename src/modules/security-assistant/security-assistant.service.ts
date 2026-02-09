@@ -239,8 +239,8 @@ export class SecurityAssistantService {
 
             throw new Error(
                 `No supported project found at ${prefix || 'root of '}${owner}/${repo}. ` +
-                    `Expected package.json (Node.js) or requirements.txt / pyproject.toml (Python). ` +
-                    (subpath ? `Check subpath "${subpath}".` : `Use "subpath" if the project is in a subdirectory.`)
+                `Expected package.json (Node.js) or requirements.txt / pyproject.toml (Python). ` +
+                (subpath ? `Check subpath "${subpath}".` : `Use "subpath" if the project is in a subdirectory.`)
             );
         } catch (e) {
             cleanup();
@@ -731,5 +731,107 @@ export class SecurityAssistantService {
         const fixed = baseline.filter((v) => !currentSet.has(key(v)));
         const introduced = current.filter((v) => !baselineSet.has(key(v)));
         return { fixed, introduced };
+    }
+
+    /**
+     * Generate a security report for the given project.
+     * @param projectPath The path to the project to scan.
+     * @returns The absolute path to the generated security report.
+     */
+    async generateReport(projectPath?: string): Promise<string> {
+        const audit = this.getAuditSummary(projectPath);
+        // Use dynamic ESM imports for jspdf and jspdf-autotable
+        const jsPDFModule: any = await import('jspdf');
+        const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default?.jsPDF || jsPDFModule.default;
+
+        // Import and apply the jspdf-autotable plugin
+        const autoTableModule: any = await import('jspdf-autotable');
+        const applyPlugin = autoTableModule.applyPlugin || autoTableModule.default;
+        applyPlugin(jsPDF);
+
+        const doc = new jsPDF();
+        const now = new Date().toLocaleString();
+
+        // Title
+        doc.setFontSize(20);
+        doc.text('Security Audit Report', 14, 22);
+
+        doc.setFontSize(11);
+        doc.setTextColor(100);
+        doc.text(`Generated on: ${now}`, 14, 30);
+
+        // Summary Table
+        doc.setFontSize(14);
+        doc.setTextColor(0);
+        doc.text('Summary', 14, 45);
+
+        const summaryData = [
+            ['Critical', audit.counts.critical],
+            ['High', audit.counts.high],
+            ['Moderate', audit.counts.moderate],
+            ['Low', audit.counts.low],
+            ['Info', audit.counts.info],
+            ['Total', audit.totalVulnerabilities],
+        ];
+
+        (doc as any).autoTable({
+            startY: 50,
+            head: [['Severity', 'Count']],
+            body: summaryData,
+            theme: 'striped',
+            headStyles: { fillColor: [22, 160, 133] },
+        });
+
+        // Vulnerabilities Details
+        let finalY = (doc as any).lastAutoTable.finalY || 50;
+        doc.text('Vulnerability Details', 14, finalY + 15);
+
+        const vulnData = audit.vulnerabilities.map(v => [
+            v.name,
+            v.severity,
+            v.title || '',
+            v.range || '',
+            v.fixAvailable ? String(v.fixAvailable) : 'N/A'
+        ]);
+
+        (doc as any).autoTable({
+            startY: finalY + 20,
+            head: [['Package', 'Severity', 'Title', 'Range', 'Fix']],
+            body: vulnData,
+            theme: 'grid',
+            headStyles: { fillColor: [41, 128, 185] },
+            columnStyles: {
+                0: { cellWidth: 30 },
+                1: { cellWidth: 20 },
+                2: { cellWidth: 'auto' }, // Title gets auto width
+                3: { cellWidth: 25 },
+                4: { cellWidth: 25 }
+            }
+        });
+
+
+
+        const reportName = `security-report-${Date.now()}.pdf`;
+
+        // Get the actual risklens project directory where this code is running
+        // import.meta.url points to this file, we go up to find project root
+        const { fileURLToPath } = await import('node:url');
+        const { dirname } = await import('node:path');
+        const currentFilePath = fileURLToPath(import.meta.url);
+        // From src/modules/security-assistant/security-assistant.service.ts -> go up 3 levels to project root
+        const projectRoot = resolve(dirname(currentFilePath), '..', '..', '..');
+
+        // Create security-reports folder if it doesn't exist
+        const reportsDir = join(projectRoot, 'security-reports');
+        if (!existsSync(reportsDir)) {
+            const { mkdirSync } = await import('node:fs');
+            mkdirSync(reportsDir, { recursive: true });
+        }
+
+        const reportPath = join(reportsDir, reportName);
+
+        writeFileSync(reportPath, Buffer.from(doc.output('arraybuffer')));
+
+        return reportPath;
     }
 }

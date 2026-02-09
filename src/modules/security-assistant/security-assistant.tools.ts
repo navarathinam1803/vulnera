@@ -44,7 +44,7 @@ async function withResolvedProject<T>(
 // Note: Using explicit deps for ESM compatibility
 @Injectable({ deps: [SecurityAssistantService] })
 export class SecurityAssistantTools {
-    constructor(private readonly security: SecurityAssistantService) {}
+    constructor(private readonly security: SecurityAssistantService) { }
 
     @Tool({
         name: 'is_app_safe_to_ship',
@@ -187,5 +187,30 @@ export class SecurityAssistantTools {
                 projectType,
             });
         });
+    }
+
+    @Tool({
+        name: 'generate_report',
+        title: 'Generate a security report',
+        description: 'Generate a security report for the given project.',
+        inputSchema: ScanTargetSchema,
+        examples: {
+            request: { githubRepo: 'owner/repo' },
+            response: {
+                repoId: 'owner/repo',
+                baseline: { scannedAt: '2025-01-01T12:00:00Z', counts: { critical: 1, high: 2, moderate: 0, low: 0, info: 0 }, totalVulnerabilities: 3 },
+                current: { scannedAt: '2025-02-01T12:00:00Z', counts: { critical: 0, high: 0, moderate: 1, low: 0, info: 0 }, totalVulnerabilities: 1 },
+                fixed: [{ name: 'lodash', severity: 'high', title: 'Prototype Pollution' }],
+                introduced: [],
+                summary: 'Compared **owner/repo**: **2** fixed. Total change: -2 vulnerability(ies).',
+            },
+        },
+        metadata: { category: 'security', tags: ['dependencies', 'compare', 'trend', 'github'] },
+    })
+    @Widget('security-report')
+    async generateReport(args: ScanTarget, ctx: ExecutionContext) {
+        ctx.logger.info('Generating report', { projectPath: args.projectPath, githubRepo: args.githubRepo });
+        const reportPath = await withResolvedProject(this.security, args, ctx, (path) => this.security.generateReport(path));
+        return { reportPath };
     }
 }
