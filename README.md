@@ -4,31 +4,60 @@ An MCP (Model Context Protocol) server that acts as a **developer security assis
 
 ## Features
 
-### Security assistant
+### MCP Tools
 
-- **Ship readiness** – "Is this app safe to ship?" based on critical/high severity (configurable policy).
-- **Highest risk** – Single highest-risk dependency and full list sorted by severity.
-- **Vulnerability summary** – Plain-language summary of findings by severity.
-- **Upgrade suggestions** – Concrete `npm install` or `pip install` commands, ordered by severity.
-- **Compare scans over time** – Save scans per repo and compare baseline vs current (fixed vs introduced).
+RiskLens provides 6 powerful MCP tools for comprehensive security analysis:
 
-### Scan targets
+#### 1. **Ship Readiness Check** (`is_app_safe_to_ship`)
+- Answers "Is this app safe to ship today?" based on dependency vulnerabilities
+- Uses default policy: safe only when there are no critical or high severity issues
+- Returns verdict, severity counts, reason, and actionable recommendations
+- **Widget**: `/ship-readiness`
 
-- **Local path** – `package.json` (Node) or `requirements.txt` / `pyproject.toml` (Python) at project root.
-- **GitHub repo** – `owner/repo` or full URL; optional `ref` (branch/tag/SHA) and `subpath` (e.g. `frontend`).
-- **Private repos** – Set `GITHUB_TOKEN` in `.env` for repos your account can access.
+#### 2. **Highest Risk Dependency** (`get_highest_risk_dependency`)
+- Identifies the single dependency with the highest risk
+- Returns top vulnerability with details and full list sorted by severity
+- Includes fix availability and CVSS-style prioritization
+- **Widget**: `/highest-risk`
 
-### Widgets (NitroStack)
+#### 3. **Vulnerability Summary** (`summarize_vulnerabilities`)
+- Translates technical security audit output into plain-language summaries
+- Groups findings by severity level (critical/high/moderate/low/info)
+- Distinguishes between direct and transitive dependencies
+- **Widget**: `/vulnerability-summary`
 
-Each tool can drive a widget in MCP clients (e.g. Cursor, Studio):
+#### 4. **Upgrade Suggestions** (`suggest_upgrades`)
+- Returns concrete upgrade steps and exact install commands
+- Supports both `npm install` (Node.js) and `pip install` (Python)
+- Sorted by severity with critical/high vulnerabilities prioritized first
+- **Widget**: `/upgrade-suggestions`
 
-| Tool                     | Widget route         | Description                          |
-|--------------------------|----------------------|--------------------------------------|
-| `is_app_safe_to_ship`    | `/ship-readiness`    | Safe-to-ship verdict and counts      |
-| `get_highest_risk_dependency` | `/highest-risk` | Top vulnerability and list           |
-| `summarize_vulnerabilities`   | `/vulnerability-summary` | Human-language summary        |
-| `suggest_upgrades`       | `/upgrade-suggestions`   | Upgrade commands by severity    |
-| `compare_scans_over_time`    | `/compare-scans`     | Baseline vs current (fixed/introduced) |
+#### 5. **Compare Scans Over Time** (`compare_scans_over_time`)
+- Saves scans per repo and compares baseline vs current state
+- Shows what vulnerabilities were fixed or newly introduced
+- Maintains up to 20 scans per repo in memory
+- Tracks trends across commits, branches, or time periods
+- **Widget**: `/compare-scans`
+
+#### 6. **PDF Report Generation** (`generate_report`)
+- Generates professional PDF security audit reports
+- Includes summary tables with severity counts
+- Detailed vulnerability listings with package names, ranges, and fixes
+- Reports saved to `security-reports/` directory with timestamps
+- **Widget**: `/security-report`
+
+### Scan Targets
+
+- **Local path** – `package.json` (Node.js) or `requirements.txt` / `pyproject.toml` (Python) at project root
+- **GitHub repo** – `owner/repo` or full URL; optional `ref` (branch/tag/SHA) and `subpath` (e.g. `frontend`)
+- **Private repos** – Set `GITHUB_TOKEN` in `.env` for repos your account can access
+- **Auto-detection** – Automatically detects Node.js vs Python projects
+
+### Supported Technologies
+
+- **Node.js**: Uses `npm audit --json` with `package.json` and lockfiles
+- **Python**: Uses `pip-audit` with `requirements.txt` or `pyproject.toml`
+- **GitHub Integration**: Full GitHub API support with rate limiting and authentication
 
 ## Quick start
 
@@ -111,18 +140,29 @@ src/
     └── tsconfig.json
 ```
 
-## MCP tools (input schema)
+## MCP Tools Reference
 
-All security tools accept the same optional scan target:
+### Input Schema
 
-| Argument      | Type   | Description |
-|--------------|--------|-------------|
-| `projectPath` | string | Local path to project root (ignored if `githubRepo` is set). |
-| `githubRepo`  | string | GitHub repo: `owner/repo` or full URL. |
-| `ref`         | string | Branch, tag, or commit (e.g. `main`, `v1.0.0`). |
-| `subpath`     | string | Subdirectory (e.g. `frontend`) when manifest is not at repo root. |
+All 6 security tools accept the same optional scan target parameters:
+
+| Argument      | Type   | Required | Description |
+|--------------|--------|----------|-------------|
+| `projectPath` | string | No | Local path to project root (ignored if `githubRepo` is set). |
+| `githubRepo`  | string | No | GitHub repo: `owner/repo` or full URL. |
+| `ref`         | string | No | Branch, tag, or commit SHA (e.g. `main`, `v1.0.0`). Defaults to default branch. |
+| `subpath`     | string | No | Subdirectory (e.g. `frontend`) when manifest is not at repo root. |
 
 If neither `projectPath` nor `githubRepo` is provided, the server uses the current working directory.
+
+### Available Tools
+
+1. **`is_app_safe_to_ship`** - Ship readiness assessment
+2. **`get_highest_risk_dependency`** - Identify highest-risk dependency
+3. **`summarize_vulnerabilities`** - Human-readable vulnerability summary
+4. **`suggest_upgrades`** - Actionable upgrade commands
+5. **`compare_scans_over_time`** - Historical scan comparison
+6. **`generate_report`** - PDF security report generation
 
 ## Commands
 
