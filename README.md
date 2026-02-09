@@ -1,247 +1,157 @@
-# 🍕 NitroStack Pizza Shop Finder
+# RiskLens (Vulnera)
 
-A comprehensive NitroStack template showcasing interactive pizza shop discovery with maps, lists, and detailed views. This template demonstrates the NitroStack Widget SDK for building beautiful, interactive widgets.
+An MCP (Model Context Protocol) server that acts as a **developer security assistant**: it scans project dependencies for vulnerabilities, answers ship-readiness questions, prioritizes risks, suggests upgrades, and compares scans over time. Supports **Node.js** (npm audit) and **Python** (pip-audit), with optional **GitHub** repo scanning.
 
 ## Features
 
-### 🎨 **Widget SDK Features**
-- ✅ `useTheme()` - Automatic dark mode support
-- ✅ `useWidgetState()` - Persistent favorites and view preferences
-- ✅ `useMaxHeight()` - Responsive height-aware layouts
-- ✅ `useDisplayMode()` - Fullscreen mode adaptation
-- ✅ `useWidgetSDK()` - Tool calling, navigation, and external links
-- ✅ `<WidgetLayout>` - Automatic RPC setup
+### Security assistant
 
-### 🗺️ **Three Interactive Widgets**
-1. **Pizza Map** - Interactive Mapbox map with markers and shop selection
-2. **Pizza List** - Grid/list view with sorting, filtering, and favorites
-3. **Pizza Shop** - Detailed shop information with contact actions
+- **Ship readiness** – "Is this app safe to ship?" based on critical/high severity (configurable policy).
+- **Highest risk** – Single highest-risk dependency and full list sorted by severity.
+- **Vulnerability summary** – Plain-language summary of findings by severity.
+- **Upgrade suggestions** – Concrete `npm install` or `pip install` commands, ordered by severity.
+- **Compare scans over time** – Save scans per repo and compare baseline vs current (fixed vs introduced).
 
-### 📊 **MCP Tools**
-- `show_pizza_map` - Display shops on an interactive map
-- `show_pizza_list` - Show filterable list of shops
-- `show_pizza_shop` - Display detailed shop information
+### Scan targets
 
-## 🚀 Quick Start
+- **Local path** – `package.json` (Node) or `requirements.txt` / `pyproject.toml` (Python) at project root.
+- **GitHub repo** – `owner/repo` or full URL; optional `ref` (branch/tag/SHA) and `subpath` (e.g. `frontend`).
+- **Private repos** – Set `GITHUB_TOKEN` in `.env` for repos your account can access.
+
+### Widgets (NitroStack)
+
+Each tool can drive a widget in MCP clients (e.g. Cursor, Studio):
+
+| Tool                     | Widget route         | Description                          |
+|--------------------------|----------------------|--------------------------------------|
+| `is_app_safe_to_ship`    | `/ship-readiness`    | Safe-to-ship verdict and counts      |
+| `get_highest_risk_dependency` | `/highest-risk` | Top vulnerability and list           |
+| `summarize_vulnerabilities`   | `/vulnerability-summary` | Human-language summary        |
+| `suggest_upgrades`       | `/upgrade-suggestions`   | Upgrade commands by severity    |
+| `compare_scans_over_time`    | `/compare-scans`     | Baseline vs current (fixed/introduced) |
+
+## Quick start
 
 ### Prerequisites
 
-```bash
-# Install NitroStack CLI globally
-npm install -g nitrostack
+- **Node.js** 18+ and npm (for the MCP server and Node project scanning).
+- **Python** 3.10+ and **pip-audit** for Python project scanning:  
+  `pip install pip-audit`
 
-# Or use npx
-npx nitrostack --version
+### Install
+
+```bash
+git clone https://github.com/navarathinam1803/vulnera.git
+cd vulnera
+npm install
+npm run widget install   # or: npm install --prefix src/widgets
 ```
 
-### Setup Your Project
+### Environment (optional)
+
+Create `.env` in the project root:
 
 ```bash
-# Create a new project
-nitrostack init my-pizza-app --template typescript-pizzaz
-cd my-pizza-app
-
-# Install all dependencies (root + widgets)
-nitrostack install
+# Optional: for private GitHub repos and higher rate limits
+GITHUB_TOKEN=your_github_personal_access_token
 ```
 
-### Configure Mapbox (Optional but Recommended)
+The server loads `.env` from the project root so it works when started from Cursor or another IDE.
 
-The map widget uses Mapbox GL for beautiful interactive maps:
-
-1. Get a **free** API key from [Mapbox](https://www.mapbox.com/) (sign up takes 1 minute)
-2. Create `src/widgets/.env` file:
+### Run
 
 ```bash
-NEXT_PUBLIC_MAPBOX_TOKEN=your_mapbox_token_here
-```
-
-> **Note**: The template works without Mapbox, but the map widget will show a placeholder. You can still use the list and shop detail widgets.
-
-### Run Development Server
-
-```bash
+# Development (MCP server + Studio + widget dev server)
 npm run dev
+
+# Production build and run
+npm run build
+npm start
 ```
 
-This starts:
-- **MCP Server** - Hot reloads on code changes
-- **Studio** on http://localhost:3000 - Visual testing environment
-- **Widget Dev Server** on http://localhost:3001 - Hot module replacement
+Then use an MCP client (e.g. Cursor, NitroStack Studio) and point it at this server. Example prompts:
 
-### Test in Studio
+- "Is **owner/repo** safe to ship?"
+- "What's the highest risk dependency in **owner/repo**?"
+- "Summarize vulnerabilities for **owner/repo**."
+- "Suggest upgrades for **owner/repo**."
+- "Compare scans over time for **owner/repo**."
 
-Try these prompts in Studio chat:
-- "Show me pizza shops on a map"
-- "List all pizza shops"
-- "Show me details for Tony's New York Pizza"
-- "Find pizza shops with high ratings"
-
-## 📁 Project Structure
+## Project structure (src)
 
 ```
-typescript-pizzaz/
-├── src/
-│   ├── index.ts                 # Main server entry
-│   ├── app.module.ts            # App module
-│   └── modules/
-│       └── pizzaz/
-│           ├── pizzaz.data.ts   # Pizza shop data
-│           ├── pizzaz.service.ts # Business logic
-│           ├── pizzaz.tools.ts  # MCP tools
-│           └── pizzaz.module.ts # Module definition
-│   └── widgets/
-│       ├── app/
-│       │   ├── pizza-map/       # Map widget
-│       │   ├── pizza-list/      # List widget
-│       │   └── pizza-shop/      # Shop detail widget
-│       └── components/
-│           └── PizzaCard.tsx    # Reusable card component
-├── package.json
-└── README.md
+src/
+├── index.ts              # Server entry; loads .env from project root, starts MCP app
+├── app.module.ts         # Root module (imports SecurityAssistantModule)
+├── modules/
+│   └── security-assistant/
+│       ├── security-assistant.data.ts   # Types: SeverityLevel, Vulnerability, AuditSummary,
+│       │                                # ShipReadiness, UpgradeSuggestion, SavedScan, CompareScansResult
+│       ├── security-assistant.service.ts # Resolve project (local/GitHub), detect Node vs Python,
+│       │                                  # run npm audit / pip-audit, normalize results,
+│       │                                  # ship readiness, highest risk, summary, upgrades,
+│       │                                  # compare scans over time (in-memory store)
+│       ├── security-assistant.tools.ts  # MCP tools + @Widget wiring for each tool
+│       └── security-assistant.module.ts # Module definition
+└── widgets/
+    ├── app/
+    │   ├── layout.tsx              # Root layout for widget app
+    │   ├── ship-readiness/page.tsx  # Ship readiness widget
+    │   ├── highest-risk/page.tsx   # Highest risk dependency widget
+    │   ├── vulnerability-summary/page.tsx
+    │   ├── upgrade-suggestions/page.tsx
+    │   └── compare-scans/page.tsx  # Compare scans over time widget
+    ├── components/
+    │   ├── ShipReadinessCard.tsx   # Ship readiness card UI
+    │   ├── SeverityBadge.tsx       # Severity chip (critical/high/moderate/low/info)
+    │   └── CompactShopCard.tsx     # (Legacy pizza template)
+    ├── widget-manifest.json        # Widget metadata and examples for discovery
+    ├── next.config.js
+    ├── package.json
+    └── tsconfig.json
 ```
 
-## 🎨 Widget Features
+## MCP tools (input schema)
 
-### Pizza Map Widget
-- **Interactive Mapbox map** with custom markers
-- **Shop sidebar** with quick selection
-- **Fullscreen mode** for better exploration
-- **Persistent favorites** using `useWidgetState()`
-- **Theme-aware** map styles (light/dark)
+All security tools accept the same optional scan target:
 
-### Pizza List Widget
-- **Grid/List view toggle** with state persistence
-- **Sorting** by rating, name, or price
-- **Favorites tracking** across sessions
-- **Responsive layout** using `useMaxHeight()`
-- **Filter panel** for advanced search
+| Argument      | Type   | Description |
+|--------------|--------|-------------|
+| `projectPath` | string | Local path to project root (ignored if `githubRepo` is set). |
+| `githubRepo`  | string | GitHub repo: `owner/repo` or full URL. |
+| `ref`         | string | Branch, tag, or commit (e.g. `main`, `v1.0.0`). |
+| `subpath`     | string | Subdirectory (e.g. `frontend`) when manifest is not at repo root. |
 
-### Pizza Shop Widget
-- **Hero image** with overlay information
-- **Contact actions** (call, directions, website)
-- **Specialties showcase**
-- **Related shops** recommendations
-- **External link handling** via `useWidgetSDK()`
+If neither `projectPath` nor `githubRepo` is provided, the server uses the current working directory.
 
-## 🔧 Commands
+## Commands
 
 ```bash
-# Installation
-npm install              # Install all dependencies (root + widgets)
-nitrostack install       # Same as above
+# Install
+npm install
+npm run widget install     # Install widget app dependencies
 
 # Development
-npm run dev              # Start dev server with Studio
-npm run build            # Build TypeScript and widgets for production
-npm start                # Run production server
+npm run dev                # MCP server + Studio + widget dev server
+npm run build              # Build TypeScript and widgets
+npm start                  # Build then run production server
 
-# Upgrade
-npm run upgrade          # Upgrade nitrostack to latest version
-
-# Widget Management
-npm run widget <command> # Run npm command in widgets directory
-npm run widget add <pkg> # Add a widget dependency
+# Widgets
+npm run widget <cmd>       # Run npm script in src/widgets (e.g. npm run widget run build)
 ```
 
-## 🛠️ Customization
+## Security behavior
 
-### Adding More Shops
+- **Node.js**: looks for `package.json`; uses `package-lock.json` or `npm-shrinkwrap.json` (or runs `npm install --package-lock-only` if missing). Runs `npm audit --json`.
+- **Python**: looks for `requirements.txt` or `pyproject.toml` (or `Pipfile` for detection). Runs `pip-audit -r requirements.txt` or `pip-audit .` for pyproject. Tries `python -m pip_audit` if `pip-audit` is not on PATH.
+- **GitHub**: checks repo access with Repos API; fetches files via Contents API. Encodes owner/repo and path segments. Uses `GITHUB_TOKEN` when set for private repos and higher rate limits.
 
-Edit `src/modules/pizzaz/pizzaz.data.ts`:
+## Compare scans over time
 
-```typescript
-export const PIZZA_SHOPS: PizzaShop[] = [
-  {
-    id: 'my-pizza-shop',
-    name: 'My Pizza Shop',
-    description: 'Amazing pizza!',
-    address: '123 Main St, City, State 12345',
-    coords: [-122.4194, 37.7749], // [lng, lat]
-    rating: 4.5,
-    reviews: 100,
-    priceLevel: 2,
-    cuisine: ['Italian', 'Pizza'],
-    hours: { open: '11:00 AM', close: '10:00 PM' },
-    phone: '(555) 123-4567',
-    website: 'https://example.com',
-    image: 'https://images.unsplash.com/photo-...',
-    specialties: ['Margherita', 'Pepperoni'],
-    openNow: true,
-  },
-  // ... more shops
-];
-```
-
-### Changing Map Style
-
-Edit `src/widgets/app/pizza-map/page.tsx`:
-
-```typescript
-style: isDark 
-  ? 'mapbox://styles/mapbox/dark-v11'  // Dark mode style
-  : 'mapbox://styles/mapbox/streets-v12' // Light mode style
-```
-
-### Adding New Filters
-
-Edit `src/modules/pizzaz/pizzaz.service.ts` to add more filter options.
-
-## 📚 SDK Features Demonstrated
-
-### Theme Awareness
-```typescript
-const theme = useTheme(); // 'light' | 'dark'
-const bgColor = theme === 'dark' ? '#000' : '#fff';
-```
-
-### State Persistence
-```typescript
-const [state, setState] = useWidgetState(() => ({
-  favorites: [],
-  viewMode: 'grid',
-}));
-
-// State persists across widget reloads
-setState({ ...state, favorites: [...state.favorites, shopId] });
-```
-
-### Responsive Layouts
-```typescript
-const maxHeight = useMaxHeight();
-return <div style={{ maxHeight }}>{content}</div>;
-```
-
-### Display Mode Adaptation
-```typescript
-const displayMode = useDisplayMode(); // 'inline' | 'pip' | 'fullscreen'
-const showSidebar = displayMode === 'fullscreen';
-```
-
-### External Links
-```typescript
-const { openExternal } = useWidgetSDK();
-openExternal('https://example.com');
-```
-
-## 🚀 Deployment
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-### Deploy Widgets
-
-Widget HTML files will be generated in `src/widgets/out/` - these work identically in any MCP-compatible client including OpenAI ChatGPT.
-
-## 📚 Next Steps
-
-- Try the **Starter Template** - Learn the basics
-- Try the **Flight Booking Template** - API integration with Duffel
-- Read the [NitroStack Documentation](https://nitrostack.ai/docs)
-- Check out [Mapbox GL JS Documentation](https://docs.mapbox.com/mapbox-gl-js/)
+- Each run of `compare_scans_over_time` for a given repo (same `githubRepo` or `projectPath`) saves the current scan and compares it to the previous one.
+- Repo is identified by `owner/repo`, `owner/repo:subpath`, or `local:<path>`.
+- Up to 20 scans per repo are kept in memory (lost on server restart).
+- Result includes baseline vs current counts, and lists of **fixed** and **introduced** vulnerabilities.
 
 ## License
 
@@ -249,4 +159,4 @@ MIT
 
 ---
 
-**Built with ❤️ using NitroStack**
+**Built with [NitroStack](https://nitrostack.ai/)** · Repo: [navarathinam1803/vulnera](https://github.com/navarathinam1803/vulnera)
